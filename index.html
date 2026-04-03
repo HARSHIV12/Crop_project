@@ -414,20 +414,26 @@
     watermelon: {N:99,  P:17,  K:50,  temperature:24.9, humidity:85, ph:6.5, rainfall:50}
   };
 
-  /* ── Server health check ── */
-  async function checkServer() {
-    try {
-      const res = await fetch('http://127.0.0.1:5000/', { method: 'GET', mode: 'cors' });
-      if (res.ok) {
-        document.getElementById('statusDot').className  = 'status-dot online';
-        document.getElementById('statusText').textContent = 'Flask server connected — ready to predict';
-      } else { throw new Error(); }
-    } catch {
-      document.getElementById('statusDot').className  = 'status-dot offline';
-      document.getElementById('statusText').textContent = 'Server offline — run: python app.py';
+async function checkServer() {
+  try {
+    const res = await fetch('https://crop-project-r78n.onrender.com/', {
+      method: 'GET'
+    });
+
+    if (res.ok) {
+      document.getElementById('statusDot').className = 'status-dot online';
+      document.getElementById('statusText').textContent =
+        'Server connected — ready to predict';
+    } else {
+      throw new Error();
     }
+  } catch {
+    document.getElementById('statusDot').className = 'status-dot offline';
+    document.getElementById('statusText').textContent =
+      'Server offline';
   }
-  checkServer();
+}
+checkServer();
 
   /* ── NPK bars ── */
   function updateNPKBars(n, p, k) {
