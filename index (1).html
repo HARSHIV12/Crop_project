@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CropSense AI - Smart Crop Recommendation</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green-900: #173404;
+    --green-800: #27500A;
+    --green-600: #3B6D11;
+    --green-400: #639922;
+    --green-200: #C0DD97;
+    --green-100: #D4EBA8;
+    --green-50:  #EAF3DE;
+    --amber-400: #BA7517;
+    --amber-50:  #FAEEDA;
+    --teal-600:  #0F6E56;
+    --teal-400:  #1D9E75;
+    --teal-50:   #E1F5EE;
+    --gray-900:  #2C2C2A;
+    --gray-600:  #5F5E5A;
+    --gray-400:  #888780;
+    --gray-200:  #B4B2A9;
+    --gray-100:  #D3D1C7;
+    --gray-50:   #F1EFE8;
+    --white:     #fff;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    min-height: 100vh;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, var(--green-800) 0%, var(--green-600) 50%, var(--teal-600) 100%);
+    position: relative; overflow: hidden;
+    min-height: 320px; display: flex; align-items: center;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .hero-content { position: relative; z-index: 1; padding: 60px 48px; max-width: 700px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px; padding: 4px 14px; font-size: 12px;
+    color: var(--green-100); margin-bottom: 20px;
+  }
+  .hero h1 { font-family: 'DM Serif Display', serif; font-size: 52px; color: #fff; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 em { font-style: italic; color: var(--green-200); }
+  .hero p { color: rgba(255,255,255,0.75); font-size: 16px; line-height: 1.6; max-width: 480px; }
+  .hero-illustration { position: absolute; right: 80px; top: 50%; transform: translateY(-50%); opacity: 0.1; font-size: 200px; line-height: 1; pointer-events: none; }
+
+  /* LAYOUT */
+  .main { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; display: grid; grid-template-columns: 1fr 400px; gap: 32px; align-items: start; }
+
+  /* FORM */
+  .form-card { background: var(--white); border-radius: 16px; border: 1px solid var(--gray-100); overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.07); }
+  .form-header { background: var(--green-50); border-bottom: 1px solid var(--gray-100); padding: 24px 28px; }
+  .form-header h2 { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--green-800); }
+  .form-header p { font-size: 13px; color: var(--gray-600); margin-top: 4px; }
+  .form-body { padding: 28px; }
+
+  .section-label { font-size: 11px; font-weight: 500; color: var(--gray-400); letter-spacing: 1px; text-transform: uppercase; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-50); }
+  .input-grid   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .input-grid-2 { display: grid; grid-template-columns: 1fr 1fr;     gap: 14px; margin-bottom: 24px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--gray-600); display: flex; align-items: center; gap: 5px; }
+  .field-icon { width: 18px; height: 18px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+  .icon-n  { background:#E8F5E9; color:#2E7D32; }
+  .icon-p  { background:#FFF3E0; color:#E65100; }
+  .icon-k  { background:#E3F2FD; color:#1565C0; }
+  .icon-t  { background:#FCE4EC; color:#880E4F; }
+  .icon-h  { background:#E0F7FA; color:#006064; }
+  .icon-ph { background:#F3E5F5; color:#4A148C; }
+  .icon-r  { background:#E8EAF6; color:#283593; }
+
+  .field input {
+    border: 1.5px solid var(--gray-100); border-radius: 8px;
+    padding: 11px 13px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--gray-900); background: var(--gray-50);
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s; outline: none;
+  }
+  .field input:focus { border-color: var(--green-400); background: var(--white); box-shadow: 0 0 0 3px rgba(99,153,34,0.1); }
+  .field input::placeholder { color: var(--gray-200); }
+
+  .predict-btn {
+    width: 100%; padding: 16px;
+    background: var(--green-600); color: #fff;
+    border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: background 0.2s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px;
+  }
+  .predict-btn:hover { background: var(--green-800); }
+  .predict-btn:active { transform: scale(0.98); }
+  .predict-btn.loading { background: var(--gray-400); cursor: not-allowed; pointer-events: none; }
+
+  /* RIGHT */
+  .right-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  .result-card { background: var(--white); border-radius: 16px; border: 1px solid var(--gray-100); overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.07); }
+  .result-empty { padding: 52px 28px; text-align: center; }
+  .result-empty .empty-icon { font-size: 52px; margin-bottom: 14px; opacity: 0.4; }
+  .result-empty p { font-size: 14px; color: var(--gray-400); line-height: 1.7; }
+
+  .result-filled { display: none; }
+  .result-filled.show { display: block; }
+
+  .result-hero { background: linear-gradient(135deg, var(--green-600), var(--teal-600)); padding: 32px 28px; text-align: center; }
+  .result-crop-emoji { font-size: 60px; margin-bottom: 10px; display: block; }
+  .result-crop-name { font-family: 'DM Serif Display', serif; font-size: 34px; color: #fff; text-transform: capitalize; margin-bottom: 8px; }
+  .confidence-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 14px; padding: 5px 14px; font-size: 12px; color: var(--green-100);
+  }
+
+  .result-details { padding: 22px 24px; }
+  .result-details h3 { font-size: 11px; font-weight: 500; color: var(--gray-400); letter-spacing: 0.8px; margin-bottom: 12px; text-transform: uppercase; }
+  .crop-insight {
+    font-size: 14px; color: var(--gray-900); line-height: 1.75;
+    background: var(--green-50); border-left: 3px solid var(--green-400);
+    border-radius: 0 8px 8px 0; padding: 14px 16px;
+  }
+
+  .loading-dots { display: flex; gap: 5px; align-items: center; justify-content: center; padding: 22px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green-400); animation: bounce 1s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.15s; }
+  .dot:nth-child(3) { animation-delay: 0.30s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(0.6)} 40%{transform:scale(1)} }
+
+  .error-box { font-size: 13px; color: #A32D2D; background: #FCEBEB; border-left: 3px solid #E24B4A; border-radius: 0 8px 8px 0; padding: 12px 16px; }
+
+  /* INFO CARDS */
+  .info-card { background: var(--white); border-radius: 16px; border: 1px solid var(--gray-100); padding: 22px 24px; box-shadow: 0 2px 16px rgba(0,0,0,0.05); }
+  .info-card h3 { font-size: 11px; font-weight: 500; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px; }
+
+  /* NPK */
+  .npk-bars { display: flex; flex-direction: column; gap: 12px; }
+  .npk-row { display: flex; align-items: center; gap: 10px; }
+  .npk-label { font-size: 12px; font-weight: 500; min-width: 14px; color: var(--gray-600); }
+  .npk-bar-bg { flex: 1; height: 8px; background: var(--gray-50); border-radius: 4px; overflow: hidden; border: 1px solid var(--gray-100); }
+  .npk-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; width: 0%; }
+  .bar-n { background: var(--green-400); }
+  .bar-p { background: var(--amber-400); }
+  .bar-k { background: var(--teal-400); }
+  .npk-val { font-size: 12px; color: var(--gray-400); min-width: 30px; text-align: right; }
+
+  /* CROPS */
+  .crops-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+  .crop-chip { background: var(--green-50); border: 1px solid var(--green-100); border-radius: 10px; padding: 10px 6px; text-align: center; font-size: 11px; color: var(--green-800); cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 4px; align-items: center; font-family: 'DM Sans', sans-serif; font-weight: 500; }
+  .crop-chip:hover { background: var(--green-200); border-color: var(--green-400); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(63,110,17,0.15); }
+  .crop-chip span { font-size: 20px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-box { border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-box .val { font-size: 24px; font-weight: 500; }
+  .stat-box .lbl { font-size: 11px; margin-top: 3px; }
+
+  /* SERVER STATUS */
+  .status-bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--green-50); border-radius: 8px; margin-bottom: 16px; font-size: 12px; color: var(--gray-600); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-200); transition: background 0.3s; }
+  .status-dot.online  { background: #639922; }
+  .status-dot.offline { background: #E24B4A; }
+
+  /* FOOTER */
+  footer { background: var(--green-900); color: rgba(255,255,255,0.5); text-align: center; padding: 20px; font-size: 12px; }
+  footer strong { color: var(--green-200); }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; padding: 24px 16px 60px; }
+    .hero h1 { font-size: 36px; }
+    .hero-content { padding: 40px 24px; }
+    .hero-illustration { display: none; }
+    .input-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .input-grid   { grid-template-columns: 1fr; }
+    .input-grid-2 { grid-template-columns: 1fr; }
+    .crops-grid   { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">🌿 AI-Powered &nbsp;·&nbsp; Random Forest &nbsp;·&nbsp; 22 Crops</div>
+    <h1>Smart Crop<br><em>Recommendation</em></h1>
+    <p>Enter your soil parameters and environmental conditions to get an AI-powered crop recommendation tailored to your land.</p>
+  </div>
+  <div class="hero-illustration">🌾</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT -->
+  <div>
+    <div class="form-card">
+      <div class="form-header">
+        <h2>Soil & Environment Parameters</h2>
+        <p>Fill in the values from your soil test report and local weather data</p>
+      </div>
+      <div class="form-body">
+
+        <!-- Server status -->
+        <div class="status-bar">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Checking server connection...</span>
+        </div>
+
+        <div class="section-label">NPK Nutrients (mg/kg)</div>
+        <div class="input-grid">
+          <div class="field">
+            <label><span class="field-icon icon-n">N</span> Nitrogen</label>
+            <input type="number" id="N" placeholder="e.g. 90" min="0" max="140">
+          </div>
+          <div class="field">
+            <label><span class="field-icon icon-p">P</span> Phosphorus</label>
+            <input type="number" id="P" placeholder="e.g. 42" min="5" max="145">
+          </div>
+          <div class="field">
+            <label><span class="field-icon icon-k">K</span> Potassium</label>
+            <input type="number" id="K" placeholder="e.g. 43" min="5" max="205">
+          </div>
+        </div>
+
+        <div class="section-label">Climate Conditions</div>
+        <div class="input-grid-2">
+          <div class="field">
+            <label><span class="field-icon icon-t">🌡</span> Temperature (°C)</label>
+            <input type="number" id="temperature" placeholder="e.g. 25" min="0" max="50" step="0.1">
+          </div>
+          <div class="field">
+            <label><span class="field-icon icon-h">💧</span> Humidity (%)</label>
+            <input type="number" id="humidity" placeholder="e.g. 80" min="0" max="100" step="0.1">
+          </div>
+        </div>
+
+        <div class="section-label">Soil Chemistry & Water</div>
+        <div class="input-grid-2">
+          <div class="field">
+            <label><span class="field-icon icon-ph">⚗</span> pH Value</label>
+            <input type="number" id="ph" placeholder="e.g. 6.5" min="3" max="10" step="0.01">
+          </div>
+          <div class="field">
+            <label><span class="field-icon icon-r">🌧</span> Rainfall (mm)</label>
+            <input type="number" id="rainfall" placeholder="e.g. 200" min="20" max="300" step="0.1">
+          </div>
+        </div>
+
+        <button class="predict-btn" onclick="predictCrop()" id="predictBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          Predict Best Crop
+        </button>
+      </div>
+    </div>
+
+    <!-- NPK Bars -->
+    <div class="info-card" style="margin-top:20px;">
+      <h3>Nutrient Profile</h3>
+      <div class="npk-bars">
+        <div class="npk-row">
+          <span class="npk-label">N</span>
+          <div class="npk-bar-bg"><div class="npk-bar-fill bar-n" id="barN"></div></div>
+          <span class="npk-val" id="valN">—</span>
+        </div>
+        <div class="npk-row">
+          <span class="npk-label">P</span>
+          <div class="npk-bar-bg"><div class="npk-bar-fill bar-p" id="barP"></div></div>
+          <span class="npk-val" id="valP">—</span>
+        </div>
+        <div class="npk-row">
+          <span class="npk-label">K</span>
+          <div class="npk-bar-bg"><div class="npk-bar-fill bar-k" id="barK"></div></div>
+          <span class="npk-val" id="valK">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+
+    <!-- Result Card -->
+    <div class="result-card">
+      <div class="result-empty" id="emptyState">
+        <div class="empty-icon">🌱</div>
+        <p>Enter your soil and climate parameters, then click <strong>Predict Best Crop</strong> to get your recommendation.</p>
+      </div>
+      <div class="result-filled" id="resultFilled">
+        <div class="result-hero">
+          <span class="result-crop-emoji" id="cropEmoji">🌾</span>
+          <div class="result-crop-name" id="cropName">—</div>
+          <div class="confidence-badge" id="confidenceBadge">✓ Model Prediction</div>
+        </div>
+        <div class="result-details">
+          <h3>Prediction Details</h3>
+          <div class="loading-dots" id="loadingDots" style="display:none;">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="crop-insight"  id="cropInsight"  style="display:none;"></div>
+          <div class="error-box"     id="errorBox"     style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Fill -->
+    <div class="info-card">
+      <h3>Quick Fill — Common Crops</h3>
+      <div class="crops-grid">
+        <div class="crop-chip" onclick="fillExample('rice')"><span>🌾</span>Rice</div>
+        <div class="crop-chip" onclick="fillExample('wheat')"><span>🌿</span>Wheat</div>
+        <div class="crop-chip" onclick="fillExample('maize')"><span>🌽</span>Maize</div>
+        <div class="crop-chip" onclick="fillExample('cotton')"><span>☁️</span>Cotton</div>
+        <div class="crop-chip" onclick="fillExample('mango')"><span>🥭</span>Mango</div>
+        <div class="crop-chip" onclick="fillExample('banana')"><span>🍌</span>Banana</div>
+        <div class="crop-chip" onclick="fillExample('grapes')"><span>🍇</span>Grapes</div>
+        <div class="crop-chip" onclick="fillExample('watermelon')"><span>🍉</span>Watermelon</div>
+      </div>
+      <p style="font-size:11px;color:var(--gray-400);margin-top:10px;">Click any crop to auto-fill typical soil values</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="info-card">
+      <h3>Model Performance</h3>
+      <div class="stats-grid">
+        <div class="stat-box" style="background:var(--green-50);">
+          <div class="val" style="color:var(--green-800);">99.3%</div>
+          <div class="lbl" style="color:var(--green-600);">Accuracy</div>
+        </div>
+        <div class="stat-box" style="background:var(--teal-50);">
+          <div class="val" style="color:var(--teal-600);">2,200</div>
+          <div class="lbl" style="color:var(--teal-400);">Training Samples</div>
+        </div>
+        <div class="stat-box" style="background:var(--amber-50);">
+          <div class="val" style="color:var(--amber-400);">22</div>
+          <div class="lbl" style="color:#BA7517;">Crop Types</div>
+        </div>
+        <div class="stat-box" style="background:var(--gray-50);">
+          <div class="val" style="color:var(--gray-600);">7</div>
+          <div class="lbl" style="color:var(--gray-400);">Input Features</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Built with <strong>Random Forest Classifier</strong> · Final Year Project &nbsp;|&nbsp; CropSense AI &copy; 2025
+</footer>
+
+<script>
+  /* ── Config ── */
+  const API_URL = 'http://127.0.0.1:5000/predict';   // Change to your deployed URL if hosting online
+
+  const cropEmojis = {
+    rice:'🌾', wheat:'🌿', maize:'🌽', chickpea:'🫘', kidneybeans:'🫘',
+    pigeonpeas:'🫛', mothbeans:'🫘', mungbean:'🫘', blackgram:'⚫',
+    lentil:'🟤', pomegranate:'🍎', banana:'🍌', mango:'🥭',
+    grapes:'🍇', watermelon:'🍉', muskmelon:'🍈', apple:'🍏',
+    orange:'🍊', papaya:'🍐', coconut:'🥥', cotton:'☁️', jute:'🌿', coffee:'☕'
+  };
+
+  const cropInsights = {
+    rice:       'Rice thrives in high humidity and waterlogged conditions. Your soil nitrogen and rainfall levels are ideal for paddy cultivation.',
+    wheat:      'Wheat prefers cooler temperatures and moderate humidity. Your soil pH and potassium levels support healthy grain development.',
+    maize:      'Maize grows well in well-drained soils with moderate nitrogen. Your temperature and rainfall pattern supports good yield.',
+    cotton:     'Cotton requires warm temperatures and moderate rainfall. Your high nitrogen content supports strong fibre development.',
+    mango:      'Mango thrives in tropical climates with a dry spell before flowering. Your soil pH and temperature are well-suited.',
+    banana:     'Banana needs rich soil and consistent moisture. Your high humidity and nutrient levels are excellent for banana cultivation.',
+    grapes:     'Grapes require high potassium and phosphorus for fruit quality. Your soil profile matches ideal vineyard conditions.',
+    watermelon: 'Watermelon needs sandy loam soil and warm conditions. Your parameters support fast vine growth and fruit development.',
+    chickpea:   'Chickpea is a drought-tolerant legume. Your moderate rainfall and neutral pH are excellent for this crop.',
+    lentil:     'Lentil grows well in cool, dry conditions with moderate nitrogen. Your soil profile supports good pod formation.',
+    coconut:    'Coconut palms thrive in high humidity and coastal climate. Your rainfall and temperature are well-matched.',
+    coffee:     'Coffee needs high humidity, moderate temperature, and acidic soil. Your parameters align with ideal coffee growing conditions.',
+    pomegranate:'Pomegranate is drought-tolerant and prefers alkaline soils. Your conditions support good fruit set.',
+    apple:      'Apple requires cool temperatures and well-drained soil. Your pH and climate conditions are suitable for apple orchards.',
+    orange:     'Orange thrives in warm, humid climates with well-drained soil. Your nutrient levels support good citrus development.',
+    papaya:     'Papaya grows fast in warm, humid conditions. Your high humidity and temperature create ideal conditions.',
+    muskmelon:  'Muskmelon needs warm, dry conditions after flowering. Your sandy soil and temperature profile are well-matched.',
+    pigeonpeas: 'Pigeon pea is drought-resistant and nitrogen-fixing. Your soil and climate conditions are perfect for this legume.',
+    mothbeans:  'Moth bean thrives in arid, sandy conditions with low rainfall. Your parameters match this hardy legume well.',
+    mungbean:   'Mung bean grows well in loamy soil with moderate moisture. Your soil nutrients support healthy pod development.',
+    blackgram:  'Black gram needs warm, moist conditions and well-drained soil. Your soil pH and humidity are well-suited.',
+    kidneybeans:'Kidney beans prefer moderate temperatures and well-drained soil. Your nitrogen and pH levels are ideal.',
+    jute:       'Jute requires high humidity, warm temperatures, and loamy soil. Your climate and soil profile are perfect for fibre production.'
+  };
+
+  const examples = {
+    rice:       {N:79,  P:46,  K:39,  temperature:23.5, humidity:82, ph:6.5, rainfall:236},
+    wheat:      {N:105, P:42,  K:43,  temperature:24.0, humidity:65, ph:6.8, rainfall:90},
+    maize:      {N:78,  P:48,  K:19,  temperature:22.6, humidity:65, ph:6.3, rainfall:67},
+    cotton:     {N:118, P:46,  K:19,  temperature:23.9, humidity:79, ph:6.8, rainfall:83},
+    mango:      {N:20,  P:27,  K:30,  temperature:31.3, humidity:50, ph:5.8, rainfall:95},
+    banana:     {N:100, P:82,  K:50,  temperature:27.4, humidity:80, ph:6.0, rainfall:105},
+    grapes:     {N:23,  P:132, K:200, temperature:23.9, humidity:81, ph:6.1, rainfall:69},
+    watermelon: {N:99,  P:17,  K:50,  temperature:24.9, humidity:85, ph:6.5, rainfall:50}
+  };
+
+  /* ── Server health check ── */
+  async function checkServer() {
+    try {
+      const res = await fetch('http://127.0.0.1:5000/', { method: 'GET', mode: 'cors' });
+      if (res.ok) {
+        document.getElementById('statusDot').className  = 'status-dot online';
+        document.getElementById('statusText').textContent = 'Flask server connected — ready to predict';
+      } else { throw new Error(); }
+    } catch {
+      document.getElementById('statusDot').className  = 'status-dot offline';
+      document.getElementById('statusText').textContent = 'Server offline — run: python app.py';
+    }
+  }
+  checkServer();
+
+  /* ── NPK bars ── */
+  function updateNPKBars(n, p, k) {
+    document.getElementById('barN').style.width = Math.min(n / 140 * 100, 100) + '%';
+    document.getElementById('barP').style.width = Math.min(p / 145 * 100, 100) + '%';
+    document.getElementById('barK').style.width = Math.min(k / 205 * 100, 100) + '%';
+    document.getElementById('valN').textContent = n || '—';
+    document.getElementById('valP').textContent = p || '—';
+    document.getElementById('valK').textContent = k || '—';
+  }
+
+  ['N','P','K'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      updateNPKBars(
+        parseFloat(document.getElementById('N').value) || 0,
+        parseFloat(document.getElementById('P').value) || 0,
+        parseFloat(document.getElementById('K').value) || 0
+      );
+    });
+  });
+
+  /* ── Quick fill ── */
+  function fillExample(crop) {
+    const ex = examples[crop];
+    if (!ex) return;
+    document.getElementById('N').value           = ex.N;
+    document.getElementById('P').value           = ex.P;
+    document.getElementById('K').value           = ex.K;
+    document.getElementById('temperature').value = ex.temperature;
+    document.getElementById('humidity').value    = ex.humidity;
+    document.getElementById('ph').value          = ex.ph;
+    document.getElementById('rainfall').value    = ex.rainfall;
+    updateNPKBars(ex.N, ex.P, ex.K);
+  }
+
+  /* ── Predict ── */
+  async function predictCrop() {
+    const fields = ['N','P','K','temperature','humidity','ph','rainfall'];
+    const vals = {};
+    for (const f of fields) {
+      const v = parseFloat(document.getElementById(f).value);
+      if (isNaN(v)) { alert('Please fill in all 7 fields before predicting.'); return; }
+      vals[f] = v;
+    }
+
+    const btn = document.getElementById('predictBtn');
+    btn.classList.add('loading');
+    btn.innerHTML = '⏳ Analysing soil data...';
+
+    document.getElementById('emptyState').style.display   = 'none';
+    document.getElementById('resultFilled').classList.add('show');
+    document.getElementById('loadingDots').style.display  = 'flex';
+    document.getElementById('cropInsight').style.display  = 'none';
+    document.getElementById('errorBox').style.display     = 'none';
+    document.getElementById('cropName').textContent       = 'Analysing...';
+    document.getElementById('cropEmoji').textContent      = '🔍';
+    document.getElementById('confidenceBadge').textContent = '✓ Model Prediction';
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vals)
+      });
+
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+      const data = await response.json();
+
+      if (!data.success) throw new Error(data.error || 'Prediction failed');
+
+      const crop = data.crop.toLowerCase();
+      document.getElementById('cropName').textContent        = crop.charAt(0).toUpperCase() + crop.slice(1);
+      document.getElementById('cropEmoji').textContent       = cropEmojis[crop] || '🌾';
+      document.getElementById('confidenceBadge').textContent = `✓ Confidence: ${data.confidence}%`;
+      document.getElementById('loadingDots').style.display   = 'none';
+      document.getElementById('cropInsight').textContent     = cropInsights[crop] || 'This crop is best suited for your soil and climate conditions based on the Random Forest model.';
+      document.getElementById('cropInsight').style.display   = 'block';
+
+      updateNPKBars(vals.N, vals.P, vals.K);
+
+    } catch (err) {
+      document.getElementById('cropName').textContent       = 'Failed';
+      document.getElementById('cropEmoji').textContent      = '⚠️';
+      document.getElementById('loadingDots').style.display  = 'none';
+      document.getElementById('errorBox').textContent       = `Could not connect to the Flask server. Make sure you have run: python app.py\n\nError: ${err.message}`;
+      document.getElementById('errorBox').style.display     = 'block';
+      checkServer();
+    }
+
+    btn.classList.remove('loading');
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> Predict Best Crop';
+  }
+</script>
+</body>
+</html>
